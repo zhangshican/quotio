@@ -45,6 +45,9 @@ struct ContentView: View {
                     Label("Dashboard", systemImage: "gauge.with.dots.needle.33percent")
                         .tag(NavigationPage.dashboard)
                     
+                    Label("Quota", systemImage: "chart.bar.fill")
+                        .tag(NavigationPage.quota)
+                    
                     Label("Providers", systemImage: "person.2.badge.key")
                         .tag(NavigationPage.providers)
                     
@@ -94,6 +97,8 @@ struct ContentView: View {
             switch viewModel.currentPage {
             case .dashboard:
                 DashboardScreen()
+            case .quota:
+                QuotaScreen()
             case .providers:
                 ProvidersScreen()
             case .logs:

@@ -117,7 +117,7 @@ struct DashboardScreen: View {
             
             KPICard(
                 title: "Success Rate",
-                value: String(format: "%.0f%%", viewModel.usageStats?.usage?.successRate ?? 0),
+                value: String(format: "%.0f%%", viewModel.usageStats?.usage?.successRate ?? 0.0),
                 subtitle: "\(viewModel.usageStats?.usage?.failureCount ?? 0) failed",
                 icon: "checkmark.circle.fill",
                 color: .orange

@@ -12,6 +12,7 @@ import AppKit
 final class QuotaViewModel {
     let proxyManager: CLIProxyManager
     private var apiClient: ManagementAPIClient?
+    private let antigravityFetcher = AntigravityQuotaFetcher()
     
     var currentPage: NavigationPage = .dashboard
     var authFiles: [AuthFile] = []
@@ -20,6 +21,9 @@ final class QuotaViewModel {
     var isLoading = false
     var errorMessage: String?
     var oauthState: OAuthState?
+    
+    /// Quota data per provider per account (email -> QuotaData)
+    var providerQuotas: [AIProvider: [String: ProviderQuotaData]] = [:]
     
     private var refreshTask: Task<Void, Never>?
     private var lastLogTimestamp: Int?
@@ -103,11 +107,24 @@ final class QuotaViewModel {
             
             self.authFiles = try await files
             self.usageStats = try await stats
+            
+            Task {
+                await refreshAntigravityQuotas()
+            }
         } catch {
             if !Task.isCancelled {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+    
+    func refreshAntigravityQuotas() async {
+        let quotas = await antigravityFetcher.fetchAllAntigravityQuotas()
+        providerQuotas[.antigravity] = quotas
+    }
+    
+    func getQuotaForAccount(provider: AIProvider, email: String) -> ProviderQuotaData? {
+        return providerQuotas[provider]?[email]
     }
     
     func refreshLogs() async {
