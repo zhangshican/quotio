@@ -239,6 +239,82 @@ struct LocalizedStrings {
         "notification.proxyCrash.body": [.english: "Proxy process exited with code %d", .vietnamese: "Tiến trình proxy đã thoát với mã %d"],
         "notification.proxyStarted.title": [.english: "✅ Proxy Started", .vietnamese: "✅ Proxy đã khởi động"],
         "notification.proxyStarted.body": [.english: "Proxy server is now running", .vietnamese: "Máy chủ proxy đang chạy"],
+        
+        // Agent Setup
+        "nav.agents": [.english: "Agents", .vietnamese: "Agent"],
+        "agents.title": [.english: "AI Agent Setup", .vietnamese: "Cài đặt AI Agent"],
+        "agents.subtitle": [.english: "Configure CLI agents to use CLIProxyAPI", .vietnamese: "Cấu hình CLI agent để sử dụng CLIProxyAPI"],
+        "agents.installed": [.english: "Installed", .vietnamese: "Đã cài đặt"],
+        "agents.notInstalled": [.english: "Not Installed", .vietnamese: "Chưa cài đặt"],
+        "agents.configured": [.english: "Configured", .vietnamese: "Đã cấu hình"],
+        "agents.configure": [.english: "Configure", .vietnamese: "Cấu hình"],
+        "agents.reconfigure": [.english: "Reconfigure", .vietnamese: "Cấu hình lại"],
+        "agents.test": [.english: "Test Connection", .vietnamese: "Kiểm tra kết nối"],
+        "agents.docs": [.english: "Documentation", .vietnamese: "Tài liệu"],
+        
+        // Configuration Modes
+        "agents.mode": [.english: "Configuration Mode", .vietnamese: "Chế độ cấu hình"],
+        "agents.mode.automatic": [.english: "Automatic", .vietnamese: "Tự động"],
+        "agents.mode.manual": [.english: "Manual", .vietnamese: "Thủ công"],
+        "agents.mode.automatic.desc": [.english: "Directly update config files and shell profile", .vietnamese: "Tự động cập nhật file cấu hình và shell profile"],
+        "agents.mode.manual.desc": [.english: "View and copy configuration manually", .vietnamese: "Xem và sao chép cấu hình thủ công"],
+        "agents.applyConfig": [.english: "Apply Configuration", .vietnamese: "Áp dụng cấu hình"],
+        "agents.generateConfig": [.english: "Generate Configuration", .vietnamese: "Tạo cấu hình"],
+        "agents.configGenerated": [.english: "Configuration Generated", .vietnamese: "Đã tạo cấu hình"],
+        "agents.copyInstructions": [.english: "Copy the configuration below and apply manually", .vietnamese: "Sao chép cấu hình bên dưới và áp dụng thủ công"],
+        
+        // Model Slots
+        "agents.modelSlots": [.english: "Model Slots", .vietnamese: "Slot mô hình"],
+        "agents.modelSlots.opus": [.english: "Opus (High Intelligence)", .vietnamese: "Opus (Thông minh cao)"],
+        "agents.modelSlots.sonnet": [.english: "Sonnet (Balanced)", .vietnamese: "Sonnet (Cân bằng)"],
+        "agents.modelSlots.haiku": [.english: "Haiku (Fast)", .vietnamese: "Haiku (Nhanh)"],
+        "agents.selectModel": [.english: "Select Model", .vietnamese: "Chọn mô hình"],
+        
+        // Config Types
+        "agents.config.env": [.english: "Environment Variables", .vietnamese: "Biến môi trường"],
+        "agents.config.file": [.english: "Configuration Files", .vietnamese: "Tệp cấu hình"],
+        "agents.copyConfig": [.english: "Copy to Clipboard", .vietnamese: "Sao chép"],
+        "agents.addToShell": [.english: "Add to Shell Profile", .vietnamese: "Thêm vào Shell Profile"],
+        "agents.shellAdded": [.english: "Added to shell profile", .vietnamese: "Đã thêm vào shell profile"],
+        "agents.copied": [.english: "Copied to clipboard", .vietnamese: "Đã sao chép"],
+        
+        // Status Messages
+        "agents.configSuccess": [.english: "Configuration complete!", .vietnamese: "Cấu hình hoàn tất!"],
+        "agents.configFailed": [.english: "Configuration failed", .vietnamese: "Cấu hình thất bại"],
+        "agents.testSuccess": [.english: "Connection successful!", .vietnamese: "Kết nối thành công!"],
+        "agents.testFailed": [.english: "Connection failed", .vietnamese: "Kết nối thất bại"],
+        
+        // Instructions
+        "agents.instructions.restart": [.english: "Restart your terminal for changes to take effect", .vietnamese: "Khởi động lại terminal để thay đổi có hiệu lực"],
+        "agents.instructions.env": [.english: "Add these environment variables to your shell profile:", .vietnamese: "Thêm các biến môi trường này vào shell profile:"],
+        "agents.instructions.file": [.english: "Configuration files have been created:", .vietnamese: "Các tệp cấu hình đã được tạo:"],
+        "agents.proxyNotRunning": [.english: "Start the proxy to configure agents", .vietnamese: "Khởi động proxy để cấu hình agent"],
+        
+        // Auth Modes
+        "agents.oauthMode": [.english: "Use OAuth Authentication", .vietnamese: "Sử dụng xác thực OAuth"],
+        "agents.apiKeyMode": [.english: "Use API Key Authentication", .vietnamese: "Sử dụng xác thực API Key"],
+        
+        // Agent Config Sheet
+        "agents.configMode": [.english: "Configuration Mode", .vietnamese: "Chế độ cấu hình"],
+        "agents.connectionInfo": [.english: "Connection Info", .vietnamese: "Thông tin kết nối"],
+        "agents.proxyURL": [.english: "Proxy URL", .vietnamese: "URL Proxy"],
+        "agents.apiKey": [.english: "API Key", .vietnamese: "Khóa API"],
+        "agents.shell": [.english: "Shell", .vietnamese: "Shell"],
+        "agents.modelSlotsDesc": [.english: "Configure which models to use for each slot", .vietnamese: "Cấu hình mô hình sử dụng cho mỗi slot"],
+        "agents.useOAuth": [.english: "Use OAuth Authentication", .vietnamese: "Sử dụng xác thực OAuth"],
+        "agents.useOAuthDesc": [.english: "Use your existing Google OAuth credentials", .vietnamese: "Sử dụng thông tin đăng nhập Google OAuth hiện có"],
+        "agents.testConnection": [.english: "Test Connection", .vietnamese: "Kiểm tra kết nối"],
+        "agents.filesModified": [.english: "Files Modified", .vietnamese: "Các tệp đã thay đổi"],
+        "agents.rawConfigs": [.english: "Raw Configurations", .vietnamese: "Cấu hình thô"],
+        "agents.apply": [.english: "Apply", .vietnamese: "Áp dụng"],
+        "agents.generate": [.english: "Generate", .vietnamese: "Tạo"],
+        "agents.viewDocs": [.english: "View Docs", .vietnamese: "Xem tài liệu"],
+        
+        // Actions (more)
+        "action.copyAll": [.english: "Copy All", .vietnamese: "Sao chép tất cả"],
+        "action.done": [.english: "Done", .vietnamese: "Xong"],
+        "action.cancel": [.english: "Cancel", .vietnamese: "Hủy"],
+        "agents.saveConfig": [.english: "Save Config", .vietnamese: "Lưu cấu hình"],
     ]
     
     static func get(_ key: String, language: AppLanguage) -> String {
