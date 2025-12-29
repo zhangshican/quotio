@@ -1,6 +1,12 @@
 # Quotio
 
-![Quotio Banner](screenshots/menu_bar.png)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="screenshots/menu_bar_dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="screenshots/menu_bar.png" />
+    <img alt="Quotio Banner" src="screenshots/menu_bar.png" height="600" />
+  </picture>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg?style=flat" alt="Platform macOS" />
@@ -28,16 +34,6 @@ Quotio là ứng dụng macOS để quản lý **CLIProxyAPI** - máy chủ prox
 - **🔄 Tự động Cập nhật**: Tích hợp Sparkle updater để cập nhật liền mạch.
 - **🌍 Đa ngôn ngữ**: Hỗ trợ tiếng Anh và tiếng Việt.
 
-## 📸 Hình ảnh
-
-| Bảng điều khiển | Nhà cung cấp |
-|:---:|:---:|
-| ![Bảng điều khiển](screenshots/dashboard.png) | ![Nhà cung cấp](screenshots/providers.png) |
-| **Cài đặt Agent** | **Giám sát Hạn mức** |
-| ![Cài đặt Agent](screenshots/agent_setup.png) | ![Giám sát Hạn mức](screenshots/quota.png) |
-| **Menu Bar** | |
-| ![Menu Bar](screenshots/menu_bar.png) | |
-
 ## 🤖 Hệ sinh thái hỗ trợ
 
 ### Nhà cung cấp AI
@@ -51,8 +47,15 @@ Quotio là ứng dụng macOS để quản lý **CLIProxyAPI** - máy chủ prox
 | iFlow | OAuth |
 | Antigravity | OAuth |
 | Kiro | OAuth |
-| Trae | OAuth |
 | GitHub Copilot | OAuth |
+
+### Theo dõi Quota IDE (Chỉ giám sát)
+| IDE | Mô tả |
+|-----|-------|
+| Cursor | Tự động phát hiện khi cài đặt và đăng nhập |
+| Trae | Tự động phát hiện khi cài đặt và đăng nhập |
+
+> **Lưu ý**: Các IDE này chỉ dùng để theo dõi quota. Không thể sử dụng làm provider cho proxy.
 
 ### Agent tương thích
 Quotio có thể tự động cấu hình các công cụ sau:
@@ -119,6 +122,43 @@ Vào tab **Agents** → Chọn agent đã cài → Nhấn **Configure** → Ch�
 - **Auto-start**: Tự động khởi động proxy khi mở app
 - **Notifications**: Bật/tắt thông báo
 
+## 📸 Hình ảnh
+
+### Bảng điều khiển
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/dashboard_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/dashboard.png" />
+  <img alt="Bảng điều khiển" src="screenshots/dashboard.png" />
+</picture>
+
+### Nhà cung cấp
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/provider_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/provider.png" />
+  <img alt="Nhà cung cấp" src="screenshots/provider.png" />
+</picture>
+
+### Cài đặt Agent
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/agent_setup_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/agent_setup.png" />
+  <img alt="Cài đặt Agent" src="screenshots/agent_setup.png" />
+</picture>
+
+### Giám sát Hạn mức
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/quota_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/quota.png" />
+  <img alt="Giám sát Hạn mức" src="screenshots/quota.png" />
+</picture>
+
+### Menu Bar
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/menu_bar_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/menu_bar.png" />
+  <img alt="Menu Bar" src="screenshots/menu_bar.png" height="600" />
+</picture>
+
 ## 🤝 Đóng góp
 
 1. Fork dự án
@@ -126,6 +166,27 @@ Vào tab **Agents** → Chọn agent đã cài → Nhấn **Configure** → Ch�
 3. Commit (`git commit -m 'Thêm tính năng mới'`)
 4. Push (`git push origin feature/tinh-nang-moi`)
 5. Mở Pull Request
+
+## ⭐ Star History
+
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="
+      https://api.star-history.com/svg?repos=nguyenphutrong/quotio&type=Date&theme=dark
+    "
+  />
+  <source
+    media="(prefers-color-scheme: light)"
+    srcset="
+      https://api.star-history.com/svg?repos=nguyenphutrong/quotio&type=Date
+    "
+  />
+  <img
+    alt="Star History Chart"
+    src="https://api.star-history.com/svg?repos=nguyenphutrong/quotio&type=Date"
+  />
+</picture>
 
 ## 📄 Giấy phép
 

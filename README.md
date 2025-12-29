@@ -1,6 +1,12 @@
 # Quotio
 
-![Quotio Banner](screenshots/menu_bar.png)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="screenshots/menu_bar_dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="screenshots/menu_bar.png" />
+    <img alt="Quotio Banner" src="screenshots/menu_bar.png" height="600" />
+  </picture>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg?style=flat" alt="Platform macOS" />
@@ -28,16 +34,6 @@ Quotio is a native macOS application for managing **CLIProxyAPI** - a local prox
 - **🔄 Auto-Update**: Built-in Sparkle updater for seamless updates.
 - **🌍 Bilingual**: English and Vietnamese support.
 
-## 📸 Screenshots
-
-| Dashboard | Providers |
-|:---:|:---:|
-| ![Dashboard](screenshots/dashboard.png) | ![Providers](screenshots/providers.png) |
-| **Agent Setup** | **Quota Monitoring** |
-| ![Agent Setup](screenshots/agent_setup.png) | ![Quota Monitoring](screenshots/quota.png) |
-| **Menu Bar** | |
-| ![Menu Bar](screenshots/menu_bar.png) | |
-
 ## 🤖 Supported Ecosystem
 
 ### AI Providers
@@ -51,8 +47,15 @@ Quotio is a native macOS application for managing **CLIProxyAPI** - a local prox
 | iFlow | OAuth |
 | Antigravity | OAuth |
 | Kiro | OAuth |
-| Trae | OAuth |
 | GitHub Copilot | OAuth |
+
+### IDE Quota Tracking (Monitor Only)
+| IDE | Description |
+|-----|-------------|
+| Cursor | Auto-detected when installed and logged in |
+| Trae | Auto-detected when installed and logged in |
+
+> **Note**: These IDEs are only used for quota usage monitoring. They cannot be used as providers for the proxy.
 
 ### Compatible CLI Agents
 Quotio can automatically configure these tools to use your centralized proxy:
@@ -119,6 +122,43 @@ Go to **Agents** tab → Select an installed agent → Click **Configure** → C
 - **Auto-start**: Launch proxy automatically when Quotio opens
 - **Notifications**: Toggle alerts for various events
 
+## 📸 Screenshots
+
+### Dashboard
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/dashboard_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/dashboard.png" />
+  <img alt="Dashboard" src="screenshots/dashboard.png" />
+</picture>
+
+### Providers
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/provider_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/provider.png" />
+  <img alt="Providers" src="screenshots/provider.png" />
+</picture>
+
+### Agent Setup
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/agent_setup_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/agent_setup.png" />
+  <img alt="Agent Setup" src="screenshots/agent_setup.png" />
+</picture>
+
+### Quota Monitoring
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/quota_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/quota.png" />
+  <img alt="Quota Monitoring" src="screenshots/quota.png" />
+</picture>
+
+### Menu Bar
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/menu_bar_dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="screenshots/menu_bar.png" />
+  <img alt="Menu Bar" src="screenshots/menu_bar.png" height="600" />
+</picture>
+
 ## 🤝 Contributing
 
 1. Fork the Project
@@ -126,6 +166,27 @@ Go to **Agents** tab → Select an installed agent → Click **Configure** → C
 3. Commit your Changes (`git commit -m 'Add amazing feature'`)
 4. Push to the Branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## ⭐ Star History
+
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="
+      https://api.star-history.com/svg?repos=nguyenphutrong/quotio&type=Date&theme=dark
+    "
+  />
+  <source
+    media="(prefers-color-scheme: light)"
+    srcset="
+      https://api.star-history.com/svg?repos=nguyenphutrong/quotio&type=Date
+    "
+  />
+  <img
+    alt="Star History Chart"
+    src="https://api.star-history.com/svg?repos=nguyenphutrong/quotio&type=Date"
+  />
+</picture>
 
 ## 📄 License
 
