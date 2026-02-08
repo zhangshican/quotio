@@ -2,34 +2,37 @@
 
 [← Back to INDEX](../../INDEX.md)
 
-**Type:** implicit | **Files:** 22
+**Type:** implicit | **Files:** 25
 
 ## Files
 
 | File | Lines | Large |
 | ---- | ----- | ----- |
-| `Quotio/Services/AgentConfigurationService.swift` | 696 | 📊 |
-| `Quotio/Services/AgentDetectionService.swift` | 251 |  |
+| `Quotio/Services/AgentConfigurationService.swift` | 1410 | 📊 |
+| `Quotio/Services/AgentDetectionService.swift` | 252 |  |
+| `Quotio/Services/AtomFeedUpdateService.swift` | 533 | 📊 |
 | `Quotio/Services/CLIExecutor.swift` | 430 |  |
 | `Quotio/Services/ChecksumVerifier.swift` | 78 |  |
 | `Quotio/Services/CompatibilityChecker.swift` | 123 |  |
 | `Quotio/Services/CustomProviderService.swift` | 334 |  |
-| `Quotio/Services/DirectAuthFileService.swift` | 476 |  |
+| `Quotio/Services/DirectAuthFileService.swift` | 487 |  |
 | `Quotio/Services/FallbackSettingsManager.swift` | 338 |  |
-| `Quotio/Services/GLMQuotaFetcher.swift` | 180 |  |
-| `Quotio/Services/ImageCacheService.swift` | 135 |  |
-| `Quotio/Services/KeychainHelper.swift` | 74 |  |
+| `Quotio/Services/GLMQuotaFetcher.swift` | 186 |  |
+| `Quotio/Services/ImageCacheService.swift` | 131 |  |
+| `Quotio/Services/KeychainHelper.swift` | 167 |  |
 | `Quotio/Services/LanguageManager.swift` | 115 |  |
 | `Quotio/Services/LaunchAtLoginManager.swift` | 189 |  |
-| `Quotio/Services/ManagementAPIClient.swift` | 718 | 📊 |
-| `Quotio/Services/NotificationManager.swift` | 326 |  |
+| `Quotio/Services/Logger.swift` | 124 |  |
+| `Quotio/Services/ManagementAPIClient.swift` | 732 | 📊 |
+| `Quotio/Services/NotificationManager.swift` | 334 |  |
 | `Quotio/Services/ProxyConfigurationService.swift` | 96 |  |
-| `Quotio/Services/RequestTracker.swift` | 187 |  |
+| `Quotio/Services/RequestTracker.swift` | 192 |  |
 | `Quotio/Services/ShellProfileManager.swift` | 121 |  |
-| `Quotio/Services/StatusBarManager.swift` | 238 |  |
-| `Quotio/Services/StatusBarMenuBuilder.swift` | 1365 | 📊 |
+| `Quotio/Services/StatusBarManager.swift` | 246 |  |
+| `Quotio/Services/StatusBarMenuBuilder.swift` | 1415 | 📊 |
 | `Quotio/Services/UpdaterService.swift` | 168 |  |
-| `Quotio/Services/WarmupService.swift` | 183 |  |
+| `Quotio/Services/WarmupService.swift` | 185 |  |
+| `Quotio/Services/WarpService.swift` | 83 |  |
 
 ## Child Modules
 

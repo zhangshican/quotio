@@ -51,6 +51,21 @@ struct SettingsScreen: View {
                 Label("settings.language".localized(), systemImage: "globe")
             }
 
+            // Troubleshooting
+            Section {
+                Button("Apply Workaround (Backup & Force URL)") {
+                    CLIProxyManager.shared.applyBaseURLWorkaround()
+                }
+
+                Button("Restore Original Settings") {
+                    CLIProxyManager.shared.removeBaseURLWorkaround()
+                }
+            } header: {
+                Label("Troubleshooting", systemImage: "hammer.fill")
+            } footer: {
+                Text("Forces the proxy to use the primary Google API URL to fix slowness. Original settings are backed up and can be restored.")
+            }
+
             // Appearance
             AppearanceSettingsSection()
             
@@ -1026,9 +1041,13 @@ struct ProxyUpdateSettingsSection: View {
     @State private var isUpgrading = false
     @State private var upgradeError: String?
     @State private var showAdvancedSheet = false
-    
+
     private var proxyManager: CLIProxyManager {
         viewModel.proxyManager
+    }
+
+    private var atomFeedService: AtomFeedUpdateService {
+        AtomFeedUpdateService.shared
     }
     
     var body: some View {
@@ -1102,6 +1121,32 @@ struct ProxyUpdateSettingsSection: View {
                     }
                     .disabled(isCheckingForUpdate)
                 }
+
+                // Last checked time
+                if let lastCheck = atomFeedService.lastCLIProxyCheck {
+                    HStack {
+                        Text("Last checked")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(lastCheck, style: .relative)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+            // Last checked time
+            HStack {
+                Text("settings.lastChecked".localized())
+                Spacer()
+                if let date = proxyManager.lastProxyUpdateCheckDate {
+                    Text(date, style: .relative)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("settings.never".localized())
+                        .foregroundStyle(.secondary)
+                }
             }
             
             // Error message
@@ -1154,10 +1199,14 @@ struct ProxyUpdateSettingsSection: View {
     private func checkForUpdate() {
         isCheckingForUpdate = true
         upgradeError = nil
-        
+
         Task { @MainActor in
+            defer {
+                // Always reset loading state
+                isCheckingForUpdate = false
+            }
+
             await proxyManager.checkForUpgrade()
-            isCheckingForUpdate = false
         }
     }
     
@@ -1608,8 +1657,11 @@ private struct AvailableVersionRow: View {
 // MARK: - Menu Bar Settings Section
 
 struct MenuBarSettingsSection: View {
+    @Environment(QuotaViewModel.self) private var viewModel
     private let settings = MenuBarSettingsManager.shared
     @AppStorage("showInDock") private var showInDock = true
+    @State private var showTruncationAlert = false
+    @State private var pendingMaxItems: Int?
     
     private var showMenuBarIconBinding: Binding<Bool> {
         Binding(
@@ -1661,6 +1713,24 @@ struct MenuBarSettingsSection: View {
         )
     }
     
+    private var maxItemsBinding: Binding<Int> {
+        Binding(
+            get: { settings.menuBarMaxItems },
+            set: { newValue in
+                let clamped = min(max(newValue, MenuBarSettingsManager.minMenuBarItems), MenuBarSettingsManager.maxMenuBarItems)
+
+                // Check if reducing max items would truncate current selection
+                if clamped < settings.menuBarMaxItems && settings.selectedItems.count > clamped {
+                    pendingMaxItems = clamped
+                    showTruncationAlert = true
+                } else {
+                    settings.menuBarMaxItems = clamped
+                    viewModel.syncMenuBarSelection()
+                }
+            }
+        )
+    }
+    
     var body: some View {
         Section {
             Toggle("settings.showInDock".localized(), isOn: showInDockBinding)
@@ -1671,6 +1741,21 @@ struct MenuBarSettingsSection: View {
                 Toggle("settings.menubar.showQuota".localized(), isOn: showQuotaBinding)
                 
                 if settings.showQuotaInMenuBar {
+                    HStack {
+                        Text("settings.menubar.maxItems".localized())
+                        Spacer()
+                        Text("\(settings.menuBarMaxItems)")
+                            .monospacedDigit()
+                            .foregroundStyle(.primary)
+                        Stepper(
+                            "",
+                            value: maxItemsBinding,
+                            in: MenuBarSettingsManager.minMenuBarItems...MenuBarSettingsManager.maxMenuBarItems,
+                            step: 1
+                        )
+                        .labelsHidden()
+                    }
+                    
                     Picker("settings.menubar.colorMode".localized(), selection: colorModeBinding) {
                         Text("settings.menubar.colored".localized()).tag(MenuBarColorMode.colored)
                         Text("settings.menubar.monochrome".localized()).tag(MenuBarColorMode.monochrome)
@@ -1681,8 +1766,31 @@ struct MenuBarSettingsSection: View {
         } header: {
             Label("settings.menubar".localized(), systemImage: "menubar.rectangle")
         } footer: {
-            Text("settings.menubar.help".localized())
-                .font(.caption)
+            Text(String(
+                format: "settings.menubar.help".localized(),
+                settings.menuBarMaxItems
+            ))
+            .font(.caption)
+        }
+        .alert("menubar.truncation.title".localized(), isPresented: $showTruncationAlert) {
+            Button("action.cancel".localized(), role: .cancel) {
+                pendingMaxItems = nil
+            }
+            Button("action.ok".localized(), role: .destructive) {
+                if let newMax = pendingMaxItems {
+                    settings.menuBarMaxItems = newMax
+                    viewModel.syncMenuBarSelection()
+                    pendingMaxItems = nil
+                }
+            }
+        } message: {
+            if let newMax = pendingMaxItems {
+                Text(String(
+                    format: "menubar.truncation.message".localized(),
+                    settings.selectedItems.count,
+                    newMax
+                ))
+            }
         }
     }
 }
@@ -2083,9 +2191,13 @@ struct AboutProxyUpdateSection: View {
     @State private var isUpgrading = false
     @State private var upgradeError: String?
     @State private var showAdvancedSheet = false
-    
+
     private var proxyManager: CLIProxyManager {
         viewModel.proxyManager
+    }
+
+    private var atomFeedService: AtomFeedUpdateService {
+        AtomFeedUpdateService.shared
     }
     
     var body: some View {
@@ -2164,7 +2276,20 @@ struct AboutProxyUpdateSection: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(isCheckingForUpdate || !proxyManager.proxyStatus.running)
+                    .disabled(isCheckingForUpdate)
+                }
+
+                // Last checked time
+                if let lastCheck = atomFeedService.lastCLIProxyCheck {
+                    HStack {
+                        Text("Last checked")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(lastCheck, style: .relative)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             
@@ -2217,10 +2342,14 @@ struct AboutProxyUpdateSection: View {
     private func checkForUpdate() {
         isCheckingForUpdate = true
         upgradeError = nil
-        
+
         Task { @MainActor in
+            defer {
+                // Always reset loading state
+                isCheckingForUpdate = false
+            }
+
             await proxyManager.checkForUpgrade()
-            isCheckingForUpdate = false
         }
     }
     
@@ -2392,9 +2521,13 @@ struct AboutProxyUpdateCard: View {
     @State private var isCheckingForUpdate = false
     @State private var isUpgrading = false
     @State private var upgradeError: String?
-    
+
     private var proxyManager: CLIProxyManager {
         viewModel.proxyManager
+    }
+
+    private var atomFeedService: AtomFeedUpdateService {
+        AtomFeedUpdateService.shared
     }
     
     var body: some View {
@@ -2481,6 +2614,19 @@ struct AboutProxyUpdateCard: View {
                     .controlSize(.small)
                     .disabled(isCheckingForUpdate)
                 }
+
+                // Last checked time
+                if let lastCheck = atomFeedService.lastCLIProxyCheck {
+                    HStack {
+                        Text("Last checked")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(lastCheck, style: .relative)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             
             // Error message
@@ -2546,10 +2692,14 @@ struct AboutProxyUpdateCard: View {
     private func checkForUpdate() {
         isCheckingForUpdate = true
         upgradeError = nil
-        
+
         Task { @MainActor in
+            defer {
+                // Always reset loading state
+                isCheckingForUpdate = false
+            }
+
             await proxyManager.checkForUpgrade()
-            isCheckingForUpdate = false
         }
     }
     
@@ -2696,7 +2846,7 @@ struct ManagementKeyRow: View {
                         .font(.caption)
                         .frame(width: 14, height: 14)
                         .foregroundStyle(showCopyConfirmation ? .green : .primary)
-                        .contentTransition(.symbolEffect(.replace))
+                        .modifier(SymbolEffectTransitionModifier())
                 }
                 .buttonStyle(.borderless)
                 .help("action.copy".localized())

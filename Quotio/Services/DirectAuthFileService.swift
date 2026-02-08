@@ -49,6 +49,17 @@ struct DirectAuthFile: Identifiable, Sendable, Hashable {
         }
         return filename
     }
+
+    /// Stable key for menu bar selection and quota lookup
+    var menuBarAccountKey: String {
+        if provider == .kiro {
+            return filename.replacingOccurrences(of: ".json", with: "")
+        }
+        if let email = email, !email.isEmpty {
+            return email
+        }
+        return filename
+    }
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -328,7 +339,8 @@ actor DirectAuthFileService {
 
                 // For IdC auth, if clientId/clientSecret are missing, try to load from AWS SSO cache
                 // Social auth (Google) doesn't need these credentials
-                if authMethod == "IdC" && (clientId == nil || clientSecret == nil) {
+                // Use case-insensitive comparison since CLIProxyAPI stores as "idc" (lowercase)
+                if authMethod.lowercased() == "idc" && (clientId == nil || clientSecret == nil) {
                     let (loadedClientId, loadedClientSecret) = loadKiroDeviceRegistration()
                     if let cid = loadedClientId, let csec = loadedClientSecret {
                         clientId = cid
@@ -473,4 +485,3 @@ struct AuthTokenData: Sendable {
         return false
     }
 }
-

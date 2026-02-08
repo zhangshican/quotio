@@ -28,6 +28,7 @@ struct AccountRowData: Identifiable, Hashable {
     let id: String
     let provider: AIProvider
     let displayName: String       // Email or account identifier
+    let menuBarAccountKey: String
     let source: AccountSource
     let status: String?           // "ready", "cooling", "error", etc.
     let statusMessage: String?
@@ -41,6 +42,7 @@ struct AccountRowData: Identifiable, Hashable {
         id: String,
         provider: AIProvider,
         displayName: String,
+        menuBarAccountKey: String? = nil,
         source: AccountSource,
         status: String?,
         statusMessage: String?,
@@ -52,6 +54,7 @@ struct AccountRowData: Identifiable, Hashable {
         self.id = id
         self.provider = provider
         self.displayName = displayName
+        self.menuBarAccountKey = menuBarAccountKey ?? displayName
         self.source = source
         self.status = status
         self.statusMessage = statusMessage
@@ -63,7 +66,7 @@ struct AccountRowData: Identifiable, Hashable {
 
     // For menu bar selection
     var menuBarItem: MenuBarQuotaItem {
-        MenuBarQuotaItem(provider: provider.rawValue, accountKey: displayName)
+        MenuBarQuotaItem(provider: provider.rawValue, accountKey: menuBarAccountKey)
     }
 
     // MARK: - Factory Methods
@@ -75,6 +78,7 @@ struct AccountRowData: Identifiable, Hashable {
             id: authFile.id,
             provider: authFile.providerType ?? .gemini,
             displayName: name,
+            menuBarAccountKey: authFile.menuBarAccountKey,
             source: .proxy,
             status: authFile.status,
             statusMessage: authFile.statusMessage,
@@ -90,6 +94,7 @@ struct AccountRowData: Identifiable, Hashable {
             id: directAuthFile.id,
             provider: directAuthFile.provider,
             displayName: name,
+            menuBarAccountKey: directAuthFile.menuBarAccountKey,
             source: .direct,
             status: nil,
             statusMessage: nil,
@@ -104,6 +109,7 @@ struct AccountRowData: Identifiable, Hashable {
             id: "\(provider.rawValue)_\(accountKey)",
             provider: provider,
             displayName: accountKey,
+            menuBarAccountKey: accountKey,
             source: .autoDetected,
             status: nil,
             statusMessage: nil,
@@ -114,10 +120,14 @@ struct AccountRowData: Identifiable, Hashable {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(isDisabled)
+        hasher.combine(status)
     }
-    
+
     static func == (lhs: AccountRowData, rhs: AccountRowData) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id &&
+        lhs.isDisabled == rhs.isDisabled &&
+        lhs.status == rhs.status
     }
 }
 
@@ -128,10 +138,12 @@ struct AccountRow: View {
     var onDelete: (() -> Void)?
     var onEdit: (() -> Void)?
     var onSwitch: (() -> Void)?
+    var onToggleDisabled: (() -> Void)?
     var isActiveInIDE: Bool = false
     
     @State private var settings = MenuBarSettingsManager.shared
     @State private var showWarning = false
+    @State private var showMaxItemsAlert = false
     @State private var showDeleteConfirmation = false
     
     private var isMenuBarSelected: Bool {
@@ -241,6 +253,26 @@ struct AccountRow: View {
                 onTap: handleMenuBarToggle
             )
 
+            // Disable/Enable toggle button (only for proxy accounts)
+            if account.source == .proxy, let onToggleDisabled = onToggleDisabled {
+                Button {
+                    onToggleDisabled()
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(account.isDisabled ? Color.red.opacity(0.1) : Color.clear)
+                            .frame(width: 28, height: 28)
+
+                        Image(systemName: account.isDisabled ? "xmark.circle.fill" : "checkmark.circle")
+                            .font(.system(size: 14))
+                            .foregroundStyle(account.isDisabled ? .red : .secondary)
+                    }
+                }
+                .buttonStyle(.rowAction)
+                .help(account.isDisabled ? "providers.enable".localized() : "providers.disable".localized())
+                .accessibilityLabel(account.isDisabled ? "providers.enable".localized() : "providers.disable".localized())
+            }
+
             // Edit button (GLM only)
             if account.canEdit, let onEdit = onEdit {
                 Button {
@@ -288,7 +320,20 @@ struct AccountRow: View {
                     Label("menubar.showOnMenuBar".localized(), systemImage: "chart.bar.fill")
                 }
             }
-            
+
+            // Disable/Enable toggle (only for proxy accounts)
+            if account.source == .proxy, let onToggleDisabled = onToggleDisabled {
+                Button {
+                    onToggleDisabled()
+                } label: {
+                    if account.isDisabled {
+                        Label("providers.enable".localized(), systemImage: "checkmark.circle")
+                    } else {
+                        Label("providers.disable".localized(), systemImage: "minus.circle")
+                    }
+                }
+            }
+
             // Delete option (only for proxy accounts)
             if account.canDelete, onDelete != nil {
                 Divider()
@@ -316,11 +361,21 @@ struct AccountRow: View {
         } message: {
             Text("menubar.warning.message".localized())
         }
+        .alert("menubar.maxItems.title".localized(), isPresented: $showMaxItemsAlert) {
+            Button("action.ok".localized(), role: .cancel) {}
+        } message: {
+            Text(String(
+                format: "menubar.maxItems.message".localized(),
+                settings.menuBarMaxItems
+            ))
+        }
     }
     
     private func handleMenuBarToggle() {
         if isMenuBarSelected {
             settings.toggleItem(account.menuBarItem)
+        } else if settings.isAtMaxItems {
+            showMaxItemsAlert = true
         } else if settings.shouldWarnOnAdd {
             showWarning = true
         } else {

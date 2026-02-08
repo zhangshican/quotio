@@ -4,7 +4,7 @@
 
 Symbol maps for 2 large files in this module.
 
-## Quotio/Models/MenuBarSettings.swift (572 lines)
+## Quotio/Models/MenuBarSettings.swift (632 lines)
 
 | Line | Kind | Name | Visibility |
 | ---- | ---- | ---- | ---------- |
@@ -29,24 +29,26 @@ Symbol maps for 2 large files in this module.
 | 376 | class | RefreshSettingsManager | (internal) |
 | 394 | method | init | (private) |
 | 404 | struct | MenuBarQuotaDisplayItem | (internal) |
-| 421 | class | MenuBarSettingsManager | (internal) |
-| 489 | method | init | (private) |
-| 511 | fn | saveSelectedItems | (private) |
-| 517 | fn | loadSelectedItems | (private) |
-| 525 | fn | addItem | (internal) |
-| 538 | fn | removeItem | (internal) |
-| 543 | fn | isSelected | (internal) |
-| 548 | fn | toggleItem | (internal) |
-| 557 | fn | pruneInvalidItems | (internal) |
-| 561 | fn | autoSelectNewAccounts | (internal) |
+| 423 | class | MenuBarSettingsManager | (internal) |
+| 515 | method | init | (private) |
+| 553 | fn | saveSelectedItems | (private) |
+| 559 | fn | loadSelectedItems | (private) |
+| 567 | fn | addItem | (internal) |
+| 581 | fn | removeItem | (internal) |
+| 587 | fn | isSelected | (internal) |
+| 592 | fn | toggleItem | (internal) |
+| 602 | fn | pruneInvalidItems | (internal) |
+| 606 | fn | autoSelectNewAccounts | (internal) |
+| 621 | fn | enforceMaxItems | (private) |
+| 628 | fn | clampedMenuBarMax | (private) |
 
-## Quotio/Models/Models.swift (594 lines)
+## Quotio/Models/Models.swift (611 lines)
 
 | Line | Kind | Name | Visibility |
 | ---- | ---- | ---- | ---------- |
-| 294 | fn | hash | (internal) |
-| 481 | method | init | (internal) |
-| 498 | mod | extension Int | (internal) |
-| 544 | fn | validate | (internal) |
-| 584 | fn | sanitize | (internal) |
+| 307 | fn | hash | (internal) |
+| 498 | method | init | (internal) |
+| 515 | mod | extension Int | (internal) |
+| 561 | fn | validate | (internal) |
+| 601 | fn | sanitize | (internal) |
 

@@ -58,7 +58,7 @@ nonisolated enum CLIAgent: String, CaseIterable, Identifiable, Codable, Sendable
         case .geminiCLI: return ["gemini"]
         case .ampCLI: return ["amp"]
         case .openCode: return ["opencode", "oc"]
-        case .factoryDroid: return ["droid", "factory-droid", "fd"]
+        case .factoryDroid: return ["droid", "factory-droid"]
         }
     }
 
@@ -80,7 +80,7 @@ nonisolated enum CLIAgent: String, CaseIterable, Identifiable, Codable, Sendable
         case .geminiCLI: return URL(string: "https://github.com/google-gemini/gemini-cli")
         case .ampCLI: return URL(string: "https://ampcode.com/manual")
         case .openCode: return URL(string: "https://github.com/sst/opencode")
-        case .factoryDroid: return URL(string: "https://github.com/github/github-spark")
+        case .factoryDroid: return URL(string: "https://docs.factory.ai/welcome")
         }
     }
 
@@ -121,23 +121,23 @@ nonisolated enum AgentConfigType: String, Codable, Sendable {
 nonisolated enum ConfigurationSetup: String, CaseIterable, Identifiable, Codable, Sendable {
     case proxy = "proxy"
     case defaultSetup = "default"
-    
+
     var id: String { rawValue }
-    
+
     var displayName: String {
         switch self {
         case .proxy: return "agents.setup.proxy".localizedStatic()
         case .defaultSetup: return "agents.setup.default".localizedStatic()
         }
     }
-    
+
     var description: String {
         switch self {
         case .proxy: return "agents.setup.proxy.desc".localizedStatic()
         case .defaultSetup: return "agents.setup.default.desc".localizedStatic()
         }
     }
-    
+
     var icon: String {
         switch self {
         case .proxy: return "arrow.triangle.branch"
@@ -229,13 +229,14 @@ nonisolated struct AvailableModel: Identifiable, Codable, Hashable, Sendable {
     }
 
     static let defaultModels: [ModelSlot: AvailableModel] = [
-        .opus: AvailableModel(id: "opus", name: "gemini-claude-opus-4-5-thinking", provider: "openai", isDefault: true),
+        .opus: AvailableModel(id: "opus", name: "gemini-claude-opus-4-6-thinking", provider: "openai", isDefault: true),
         .sonnet: AvailableModel(id: "sonnet", name: "gemini-claude-sonnet-4-5", provider: "openai", isDefault: true),
         .haiku: AvailableModel(id: "haiku", name: "gemini-3-flash-preview", provider: "openai", isDefault: true)
     ]
 
     static let allModels: [AvailableModel] = [
         // Claude models
+        AvailableModel(id: "gemini-claude-opus-4-6-thinking", name: "gemini-claude-opus-4-6-thinking", provider: "anthropic", isDefault: false),
         AvailableModel(id: "gemini-claude-opus-4-5-thinking", name: "gemini-claude-opus-4-5-thinking", provider: "anthropic", isDefault: false),
         AvailableModel(id: "gemini-claude-sonnet-4-5", name: "gemini-claude-sonnet-4-5", provider: "anthropic", isDefault: false),
         AvailableModel(id: "gemini-claude-sonnet-4-5-thinking", name: "gemini-claude-sonnet-4-5-thinking", provider: "anthropic", isDefault: false),
@@ -313,7 +314,7 @@ nonisolated struct AgentConfiguration: Codable, Sendable {
             AvailableModel.defaultModels[slot].map { (slot, $0.name) }
         })
     }
-    
+
     /// Initialize with saved model slots (for restoring existing configuration)
     init(agent: CLIAgent, proxyURL: String, apiKey: String, setupMode: ConfigurationSetup = .proxy, savedModelSlots: [ModelSlot: String]) {
         self.agent = agent
@@ -321,7 +322,7 @@ nonisolated struct AgentConfiguration: Codable, Sendable {
         self.apiKey = apiKey
         self.useOAuth = agent == .geminiCLI
         self.setupMode = setupMode
-        
+
         // Start with defaults, then overlay saved slots
         var slots = Dictionary(uniqueKeysWithValues: ModelSlot.allCases.compactMap { slot in
             AvailableModel.defaultModels[slot].map { (slot, $0.name) }
@@ -418,7 +419,16 @@ nonisolated enum ShellType: String, CaseIterable, Sendable {
     var profilePath: String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         switch self {
-        case .zsh: return "\(home)/.zshrc"
+        case .zsh:
+            if let zdotdir = ProcessInfo.processInfo.environment["ZDOTDIR"], !zdotdir.isEmpty {
+                return "\(zdotdir)/.zshrc"
+            }
+            let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"] ?? "\(home)/.config"
+            let xdgZshDir = "\(xdgConfigHome)/zsh"
+            if FileManager.default.fileExists(atPath: xdgZshDir) {
+                return "\(xdgZshDir)/.zshrc"
+            }
+            return "\(home)/.zshrc"
         case .bash: return "\(home)/.bashrc"
         case .fish: return "\(home)/.config/fish/config.fish"
         }
@@ -439,43 +449,4 @@ nonisolated struct ConnectionTestResult: Sendable {
     let message: String
     let latencyMs: Int?
     let modelResponded: String?
-}
-
-// MARK: - Model Cache (for Stale-While-Revalidate)
-
-/// Cache wrapper for available models with TTL support
-/// - TTL: 24 hours (models list changes infrequently)
-/// - Stale threshold: 1 hour (triggers background refresh)
-nonisolated struct ModelCache: Codable, Sendable {
-    let models: [AvailableModel]
-    let timestamp: Date
-    let agentId: String
-    
-    /// Cache TTL: 24 hours
-    private static let cacheTTL: TimeInterval = 24 * 60 * 60
-    
-    /// Stale threshold: 1 hour (after this, background refresh triggers)
-    private static let staleThreshold: TimeInterval = 1 * 60 * 60
-    
-    /// Check if cache has completely expired (24h)
-    var isExpired: Bool {
-        Date().timeIntervalSince(timestamp) > Self.cacheTTL
-    }
-    
-    /// Check if cache is stale but usable (1h) - triggers background refresh
-    var isStale: Bool {
-        Date().timeIntervalSince(timestamp) > Self.staleThreshold
-    }
-    
-    /// Cache age in human-readable format (for debugging)
-    var ageDescription: String {
-        let age = Date().timeIntervalSince(timestamp)
-        if age < 60 {
-            return "\(Int(age))s"
-        } else if age < 3600 {
-            return "\(Int(age / 60))m"
-        } else {
-            return "\(Int(age / 3600))h"
-        }
-    }
 }

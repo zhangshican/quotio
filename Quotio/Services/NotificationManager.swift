@@ -86,10 +86,13 @@ final class NotificationManager {
         }
     }
     
-    func checkAuthorizationStatus() async {
+    nonisolated func checkAuthorizationStatus() async {
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
-        isAuthorized = settings.authorizationStatus == .authorized
+        let authorized = settings.authorizationStatus == .authorized
+        await MainActor.run {
+            self.isAuthorized = authorized
+        }
     }
     
     // MARK: - Notification Sending
@@ -260,6 +263,11 @@ final class NotificationManager {
     /// Clear upgrade available notification tracking (call when user upgrades or dismisses)
     func clearUpgradeAvailableNotification(version: String) {
         sentNotifications.remove("upgrade_available_\(version)")
+    }
+    
+    /// Suppress upgrade notification for a version (call after successful upgrade to prevent duplicate notifications)
+    func suppressUpgradeNotification(version: String) {
+        sentNotifications.insert("upgrade_available_\(version)")
     }
     
     /// Send notification when proxy upgrade succeeds

@@ -42,7 +42,9 @@ final class RequestTracker {
     
     /// Storage file URL
     private var storageURL: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory not found")
+        }
         let quotioDir = appSupport.appendingPathComponent("Quotio")
         try? FileManager.default.createDirectory(at: quotioDir, withIntermediateDirectories: true)
         return quotioDir.appendingPathComponent("request-history.json")
@@ -94,6 +96,7 @@ final class RequestTracker {
     
     /// Add a request from ProxyBridge callback
     func addRequest(from metadata: ProxyBridge.RequestMetadata) {
+        let attempts = metadata.fallbackAttempts.isEmpty ? nil : metadata.fallbackAttempts
         let entry = RequestLog(
             timestamp: metadata.timestamp,
             method: metadata.method,
@@ -108,7 +111,9 @@ final class RequestTracker {
             statusCode: metadata.statusCode,
             requestSize: metadata.requestSize,
             responseSize: metadata.responseSize,
-            errorMessage: nil
+            errorMessage: metadata.responseSnippet,
+            fallbackAttempts: attempts,
+            fallbackStartedFromCache: metadata.fallbackStartedFromCache
         )
 
         addEntry(entry)

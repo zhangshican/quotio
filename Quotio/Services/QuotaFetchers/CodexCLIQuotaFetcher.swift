@@ -77,6 +77,16 @@ actor CodexCLIQuotaFetcher {
         self.session = URLSession(configuration: config)
     }
 
+#if DEBUG
+    private func debugMask(_ value: String?) -> String {
+        guard let value, !value.isEmpty else { return "<nil>" }
+        if value.count <= 8 { return "\(value) (len=\(value.count))" }
+        let prefix = value.prefix(4)
+        let suffix = value.suffix(4)
+        return "\(prefix)…\(suffix) (len=\(value.count))"
+    }
+#endif
+
     /// Update the URLSession with current proxy settings
     func updateProxyConfiguration() {
         let config = ProxyConfigurationService.createProxiedConfigurationStatic(timeout: 15)
@@ -158,11 +168,20 @@ actor CodexCLIQuotaFetcher {
     }
     
     /// Fetch quota from ChatGPT usage API
-    func fetchQuota(accessToken: String) async throws -> CodexCLIQuotaInfo {
-        var request = URLRequest(url: URL(string: usageURL)!)
+    func fetchQuota(accessToken: String, accountId: String?) async throws -> CodexCLIQuotaInfo {
+        guard let url = URL(string: usageURL) else {
+            throw CodexCLIQuotaError.invalidURL
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
+        if let accountId, !accountId.isEmpty {
+            request.addValue(accountId, forHTTPHeaderField: "ChatGPT-Account-Id")
+        }
+#if DEBUG
+        Log.quota("GET \(usageURL) accountId=\(debugMask(accountId))")
+#endif
         
         let (data, response) = try await session.data(for: request)
         
@@ -179,7 +198,11 @@ actor CodexCLIQuotaFetcher {
             throw CodexCLIQuotaError.invalidResponse
         }
         
-        return parseUsageResponse(json)
+        let quotaInfo = parseUsageResponse(json)
+#if DEBUG
+        Log.quota("plan_type=\(quotaInfo.planType ?? "<nil>")")
+#endif
+        return quotaInfo
     }
     
     /// Parse usage API response
@@ -286,10 +309,14 @@ actor CodexCLIQuotaFetcher {
         // Get email and plan from id_token
         var email = "Codex User"
         var planType: String? = nil
+        var accountId: String? = tokens.accountId
         
         if let idToken = tokens.idToken, let claims = decodeJWT(token: idToken) {
             email = claims.email ?? email
             planType = claims.planType
+            if accountId == nil {
+                accountId = claims.accountId
+            }
         }
         
         // Check if token is expired and try to refresh
@@ -298,14 +325,14 @@ actor CodexCLIQuotaFetcher {
             do {
                 currentAccessToken = try await refreshAccessToken(refreshToken: refreshToken)
             } catch {
-                print("Failed to refresh Codex token: \(error)")
+                Log.quota("Failed to refresh Codex token: \(error)")
                 // Continue with potentially expired token, API will fail if truly expired
             }
         }
         
         // Fetch quota from API
         do {
-            let quotaInfo = try await fetchQuota(accessToken: currentAccessToken)
+            let quotaInfo = try await fetchQuota(accessToken: currentAccessToken, accountId: accountId)
             
             // Build model quotas
             var models: [ModelQuota] = []
@@ -340,12 +367,15 @@ actor CodexCLIQuotaFetcher {
                 models: models,
                 lastUpdated: Date(),
                 isForbidden: quotaInfo.limitReached,
-                planType: planType ?? quotaInfo.planType
+                planType: quotaInfo.planType ?? planType
             )
+#if DEBUG
+            Log.quota("finalPlan=\(providerQuota.planType ?? "<nil>") usage=\(quotaInfo.planType ?? "<nil>") jwt=\(planType ?? "<nil>")")
+#endif
             
             return [email: providerQuota]
         } catch {
-            print("Failed to fetch Codex quota: \(error)")
+            Log.quota("Failed to fetch Codex quota: \(error)")
             return [:]
         }
     }
@@ -355,6 +385,7 @@ actor CodexCLIQuotaFetcher {
 
 nonisolated enum CodexCLIQuotaError: LocalizedError {
     case invalidResponse
+    case invalidURL
     case httpError(Int)
     case noAccessToken
     case tokenRefreshFailed
@@ -362,6 +393,7 @@ nonisolated enum CodexCLIQuotaError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidResponse: return "Invalid response from ChatGPT"
+        case .invalidURL: return "Invalid URL"
         case .httpError(let code): return "HTTP error: \(code)"
         case .noAccessToken: return "No access token found in Codex auth file"
         case .tokenRefreshFailed: return "Failed to refresh Codex token"

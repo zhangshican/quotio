@@ -2,13 +2,13 @@
 
 [← Back to INDEX](../../INDEX.md)
 
-**Type:** implicit | **Files:** 26
+**Type:** implicit | **Files:** 27
 
 ## Files
 
 | File | Lines | Large |
 | ---- | ----- | ----- |
-| `Quotio/Views/Components/AccountRow.swift` | 376 |  |
+| `Quotio/Views/Components/AccountRow.swift` | 431 |  |
 | `Quotio/Views/Components/AccountsEmptyState.swift` | 80 |  |
 | `Quotio/Views/Components/AddProviderPopover.swift` | 158 |  |
 | `Quotio/Views/Components/AgentCard.swift` | 147 |  |
@@ -20,8 +20,8 @@
 | `Quotio/Views/Components/GLMAPIKeySheet.swift` | 233 |  |
 | `Quotio/Views/Components/IDEScanSheet.swift` | 320 |  |
 | `Quotio/Views/Components/ProviderAccountsGroup.swift` | 227 |  |
-| `Quotio/Views/Components/ProviderDisclosureGroup.swift` | 129 |  |
-| `Quotio/Views/Components/ProviderIcon.swift` | 69 |  |
+| `Quotio/Views/Components/ProviderDisclosureGroup.swift` | 131 |  |
+| `Quotio/Views/Components/ProviderIcon.swift` | 83 |  |
 | `Quotio/Views/Components/ProxyRequiredView.swift` | 103 |  |
 | `Quotio/Views/Components/QuotaCard.swift` | 382 |  |
 | `Quotio/Views/Components/QuotaProgressBar.swift` | 45 |  |
@@ -34,6 +34,7 @@
 | `Quotio/Views/Components/TunnelSheet.swift` | 390 |  |
 | `Quotio/Views/Components/TunnelStatusBadge.swift` | 81 |  |
 | `Quotio/Views/Components/WarmupSheet.swift` | 354 |  |
+| `Quotio/Views/Components/WarpConnectionSheet.swift` | 122 |  |
 
 ## Documentation
 

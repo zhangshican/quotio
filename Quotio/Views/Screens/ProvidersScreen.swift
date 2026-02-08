@@ -20,13 +20,15 @@ struct ProvidersScreen: View {
     @State private var projectId: String = ""
     @State private var showProxyRequiredAlert = false
     @State private var showIDEScanSheet = false
-    @State private var showCustomProviderSheet = false
-    @State private var editingCustomProvider: CustomProvider?
+    @State private var customProviderSheetMode: CustomProviderSheetMode?
+    @State private var showWarpConnectionSheet = false
+    @State private var editingWarpToken: WarpService.WarpToken?
     @State private var showAddProviderPopover = false
     @State private var switchingAccount: AccountRowData?
 
     private let modeManager = OperatingModeManager.shared
     private let customProviderService = CustomProviderService.shared
+    private let warpService = WarpService.shared
     
     // MARK: - Computed Properties
     
@@ -76,6 +78,7 @@ struct ProvidersScreen: View {
                 id: glmProvider.id.uuidString,
                 provider: .glm,
                 displayName: glmProvider.name.isEmpty ? "GLM" : glmProvider.name,
+                menuBarAccountKey: glmProvider.name,
                 source: .direct,
                 status: "ready",
                 statusMessage: nil,
@@ -84,6 +87,23 @@ struct ProvidersScreen: View {
                 canEdit: true
             )
             groups[.glm, default: []].append(data)
+        }
+
+        // Add Warp providers from WarpService
+        for warpToken in warpService.tokens.filter({ $0.isEnabled }) {
+            let data = AccountRowData(
+                id: warpToken.id.uuidString,
+                provider: .warp,
+                displayName: warpToken.name.isEmpty ? "Warp" : warpToken.name,
+                menuBarAccountKey: warpToken.name,
+                source: .direct,
+                status: "ready",
+                statusMessage: nil,
+                isDisabled: false,
+                canDelete: true,
+                canEdit: true
+            )
+            groups[.warp, default: []].append(data)
         }
 
         return groups
@@ -153,16 +173,29 @@ struct ProvidersScreen: View {
             IDEScanSheet {}
             .environment(viewModel)
         }
-        .sheet(isPresented: $showCustomProviderSheet) {
-            CustomProviderSheet(provider: editingCustomProvider) { provider in
+        .sheet(item: $customProviderSheetMode) { mode in
+            CustomProviderSheet(provider: mode.provider) { provider in
                 // Check if provider already exists by ID to determine if we're updating or adding
                 if customProviderService.providers.contains(where: { $0.id == provider.id }) {
                     customProviderService.updateProvider(provider)
                 } else {
                     customProviderService.addProvider(provider)
                 }
-                editingCustomProvider = nil
                 syncCustomProvidersToConfig()
+            }
+        }
+        .sheet(isPresented: $showWarpConnectionSheet) {
+            WarpConnectionSheet(token: editingWarpToken) { name, token in
+                if let existing = editingWarpToken {
+                    var updated = existing
+                    updated.name = name
+                    updated.token = token
+                    warpService.updateToken(updated)
+                } else {
+                    warpService.addToken(name: name, token: token)
+                }
+                editingWarpToken = nil
+                Task { await viewModel.refreshAutoDetectedProviders() }
             }
         }
         .sheet(isPresented: $showAddProviderPopover) {
@@ -176,8 +209,7 @@ struct ProvidersScreen: View {
                     showIDEScanSheet = true
                 },
                 onAddCustomProvider: {
-                    editingCustomProvider = nil
-                    showCustomProviderSheet = true
+                    customProviderSheetMode = .add
                 },
                 onDismiss: {
                     showAddProviderPopover = false
@@ -254,12 +286,19 @@ struct ProvidersScreen: View {
                         onDeleteAccount: { account in
                             Task { await deleteAccount(account) }
                         },
-                        onEditAccount: provider == .glm ? { account in
-                            handleEditGlmAccount(account)
-                        } : nil,
+                        onEditAccount: { account in
+                            if provider == .glm {
+                                handleEditGlmAccount(account)
+                            } else if provider == .warp {
+                                handleEditWarpAccount(account)
+                            }
+                        },
                         onSwitchAccount: provider == .antigravity ? { account in
                             switchingAccount = account
                         } : nil,
+                        onToggleDisabled: { account in
+                            Task { await toggleAccountDisabled(account) }
+                        },
                         isAccountActive: provider == .antigravity ? { account in
                             viewModel.isAntigravityAccountActive(email: account.displayName)
                         } : nil
@@ -300,8 +339,7 @@ struct ProvidersScreen: View {
                 CustomProviderRow(
                     provider: provider,
                     onEdit: {
-                        editingCustomProvider = provider
-                        showCustomProviderSheet = true
+                        customProviderSheetMode = .edit(provider)
                     },
                     onDelete: {
                         customProviderService.deleteProvider(id: provider.id)
@@ -345,6 +383,9 @@ struct ProvidersScreen: View {
 
         if provider == .vertex {
             isImporterPresented = true
+        } else if provider == .warp {
+            editingWarpToken = nil
+            showWarpConnectionSheet = true
         } else {
             viewModel.oauthState = nil
             selectedProvider = provider
@@ -365,6 +406,15 @@ struct ProvidersScreen: View {
             }
             return
         }
+        
+        // Handle Warp accounts (stored in WarpService)
+        if account.provider == .warp {
+            if let uuid = UUID(uuidString: account.id) {
+                warpService.deleteToken(id: uuid)
+                await viewModel.refreshQuotaForProvider(.warp)
+            }
+            return
+        }
 
         // Find the original AuthFile to delete
         if let authFile = viewModel.authFiles.first(where: { $0.id == account.id }) {
@@ -372,11 +422,28 @@ struct ProvidersScreen: View {
         }
     }
 
+    private func toggleAccountDisabled(_ account: AccountRowData) async {
+        // Only proxy accounts can be disabled via API
+        guard account.source == .proxy else { return }
+
+        // Find the original AuthFile to toggle
+        if let authFile = viewModel.authFiles.first(where: { $0.id == account.id }) {
+            await viewModel.toggleAuthFileDisabled(authFile)
+        }
+    }
+
     private func handleEditGlmAccount(_ account: AccountRowData) {
         // Find the GLM provider by ID and open edit sheet using CustomProviderSheet
         if let glmProvider = customProviderService.providers.first(where: { $0.id.uuidString == account.id }) {
-            editingCustomProvider = glmProvider
-            showCustomProviderSheet = true
+            customProviderSheetMode = .edit(glmProvider)
+        }
+    }
+    
+    private func handleEditWarpAccount(_ account: AccountRowData) {
+        // Find the Warp token by ID and open edit sheet
+        if let token = warpService.tokens.first(where: { $0.id.uuidString == account.id }) {
+            editingWarpToken = token
+            showWarpConnectionSheet = true
         }
     }
 
@@ -912,5 +979,30 @@ private struct OAuthStatusView: View {
             }
         }
         .frame(minHeight: 100)
+    }
+}
+
+// MARK: - Custom Provider Sheet Mode
+
+enum CustomProviderSheetMode: Identifiable {
+    case add
+    case edit(CustomProvider)
+
+    var id: String {
+        switch self {
+        case .add:
+            return "add"
+        case .edit(let provider):
+            return provider.id.uuidString
+        }
+    }
+
+    var provider: CustomProvider? {
+        switch self {
+        case .add:
+            return nil
+        case .edit(let provider):
+            return provider
+        }
     }
 }

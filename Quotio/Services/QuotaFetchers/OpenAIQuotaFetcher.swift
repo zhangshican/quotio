@@ -16,17 +16,73 @@ actor OpenAIQuotaFetcher {
         self.session = URLSession(configuration: config)
     }
 
+#if DEBUG
+    private func debugMask(_ value: String?) -> String {
+        guard let value, !value.isEmpty else { return "<nil>" }
+        if value.count <= 8 { return "\(value) (len=\(value.count))" }
+        let prefix = value.prefix(4)
+        let suffix = value.suffix(4)
+        return "\(prefix)…\(suffix) (len=\(value.count))"
+    }
+#endif
+
     /// Update the URLSession with current proxy settings
     func updateProxyConfiguration() {
         let config = ProxyConfigurationService.createProxiedConfigurationStatic(timeout: 15)
         self.session = URLSession(configuration: config)
     }
     
-    func fetchQuota(accessToken: String) async throws -> CodexQuotaData {
-        var request = URLRequest(url: URL(string: usageURL)!)
+    private func extractAccountId(from authFile: CodexAuthFile, rawJSON: [String: Any]) -> String? {
+        if let accountId = authFile.accountId, !accountId.isEmpty {
+            return accountId
+        }
+        if let accountId = rawJSON["chatgpt_account_id"] as? String, !accountId.isEmpty {
+            return accountId
+        }
+        if let idToken = authFile.idToken, let accountId = decodeAccountId(fromJWT: idToken) {
+            return accountId
+        }
+        return nil
+    }
+    
+    private func decodeAccountId(fromJWT token: String) -> String? {
+        let segments = token.split(separator: ".")
+        guard segments.count >= 2 else { return nil }
+        
+        var base64 = String(segments[1])
+        let padLength = (4 - base64.count % 4) % 4
+        base64 += String(repeating: "=", count: padLength)
+        base64 = base64.replacingOccurrences(of: "-", with: "+")
+        base64 = base64.replacingOccurrences(of: "_", with: "/")
+        
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        
+        if let authInfo = json["https://api.openai.com/auth"] as? [String: Any],
+           let accountId = authInfo["chatgpt_account_id"] as? String,
+           !accountId.isEmpty {
+            return accountId
+        }
+        
+        return nil
+    }
+    
+    func fetchQuota(accessToken: String, accountId: String?) async throws -> CodexQuotaData {
+        guard let url = URL(string: usageURL) else {
+            throw CodexQuotaError.invalidURL
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
+        if let accountId, !accountId.isEmpty {
+            request.addValue(accountId, forHTTPHeaderField: "ChatGPT-Account-Id")
+        }
+#if DEBUG
+        Log.quota("GET \\(usageURL) accountId=\\(debugMask(accountId))")
+#endif
         
         let (data, response) = try await session.data(for: request)
         
@@ -39,6 +95,9 @@ actor OpenAIQuotaFetcher {
         }
         
         let quotaResponse = try JSONDecoder().decode(CodexUsageResponse.self, from: data)
+#if DEBUG
+        Log.quota("plan_type=\(quotaResponse.planType ?? "<nil>")")
+#endif
         return CodexQuotaData(from: quotaResponse)
     }
     
@@ -46,6 +105,8 @@ actor OpenAIQuotaFetcher {
         let url = URL(fileURLWithPath: path)
         let data = try Data(contentsOf: url)
         var authFile = try JSONDecoder().decode(CodexAuthFile.self, from: data)
+        let rawJSON = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        let accountId = extractAccountId(from: authFile, rawJSON: rawJSON)
         
         var accessToken = authFile.accessToken
         
@@ -58,15 +119,18 @@ actor OpenAIQuotaFetcher {
                     try? updatedData.write(to: url)
                 }
             } catch {
-                print("Token refresh failed: \(error)")
+                Log.quota("Token refresh failed: \\(error)")
             }
         }
         
-        return try await fetchQuota(accessToken: accessToken)
+        return try await fetchQuota(accessToken: accessToken, accountId: accountId)
     }
     
     private func refreshAccessToken(refreshToken: String) async throws -> String {
-        var request = URLRequest(url: URL(string: tokenURL)!)
+        guard let url = URL(string: tokenURL) else {
+            throw CodexQuotaError.invalidURL
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
@@ -104,7 +168,7 @@ actor OpenAIQuotaFetcher {
                     .replacingOccurrences(of: ".json", with: "")
                 results[email] = quota.toProviderQuotaData()
             } catch {
-                print("Failed to fetch Codex quota for \(file): \(error)")
+                Log.quota("Failed to fetch Codex quota for \(file): \(error)")
             }
         }
         
@@ -235,6 +299,9 @@ nonisolated struct CodexAuthFile: Codable, Sendable {
     let idToken: String?
     let refreshToken: String?
     let type: String?
+    // Fields preserved during token refresh (used by CLIProxyAPI)
+    var prefix: String?
+    var proxyUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
@@ -244,6 +311,8 @@ nonisolated struct CodexAuthFile: Codable, Sendable {
         case idToken = "id_token"
         case refreshToken = "refresh_token"
         case type
+        case prefix
+        case proxyUrl = "proxy_url"
     }
     
     nonisolated var isExpired: Bool {
@@ -274,6 +343,7 @@ private nonisolated struct TokenRefreshResponse: Codable, Sendable {
 
 nonisolated enum CodexQuotaError: LocalizedError {
     case invalidResponse
+    case invalidURL
     case httpError(Int)
     case noAccessToken
     case tokenRefreshFailed
@@ -282,6 +352,7 @@ nonisolated enum CodexQuotaError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidResponse: return "Invalid response from ChatGPT"
+        case .invalidURL: return "Invalid URL"
         case .httpError(let code): return "HTTP error: \(code)"
         case .noAccessToken: return "No access token found in auth file"
         case .tokenRefreshFailed: return "Failed to refresh token"
